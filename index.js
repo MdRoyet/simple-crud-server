@@ -114,6 +114,32 @@ app.post("/users", async (req, res) => {
   res.status(201).send(result);
 });
 
+// Update User informations
+
+app.put("/users/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const user = req.body;
+    const filter = { _id: new ObjectId(id) };
+    const options = { upsert: true };
+    const updatedUser = {
+      $set: {
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    };
+    const result = await usersCollection.updateOne(
+      filter,
+      updatedUser,
+      options,
+    );
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({ error: "Failed to update user" });
+  }
+});
+
 // ==========================================
 //              START SERVER
 // ==========================================
