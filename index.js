@@ -106,6 +106,14 @@ app.delete("/users/:id", async (req, res) => {
   }
 });
 
+/// New Data Insert
+
+app.post("/users", async (req, res) => {
+  const newUser = req.body;
+  const result = await usersCollection.insertOne(newUser);
+  res.status(201).send(result);
+});
+
 // ==========================================
 //              START SERVER
 // ==========================================
