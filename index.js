@@ -84,6 +84,28 @@ app.get("/users/:id", async (req, res) => {
   }
 });
 
+/// Delete Single Item by ID
+app.delete("/users/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const query = { _id: new ObjectId(id) };
+
+    // We call it 'result' because it's a status object, not the 'user' data
+    const result = await usersCollection.deleteOne(query);
+
+    // Check if exactly 1 document was deleted
+    if (result.deletedCount === 1) {
+      res.send(result);
+    } else {
+      // This triggers if the ID was valid but didn't exist in the DB
+      res.status(404).send({ message: "No user found with that ID" });
+    }
+  } catch (error) {
+    // This triggers if the ID string is not a valid 24-character hex string
+    res.status(500).send({ error: "Invalid ID format or server error" });
+  }
+});
+
 // ==========================================
 //              START SERVER
 // ==========================================
