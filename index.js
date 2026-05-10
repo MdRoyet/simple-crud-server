@@ -1,18 +1,23 @@
 const express = require("express");
 const cors = require("cors");
-const app = express();
-const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const dns = require("dns");
+
+// DNS Fixes
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 dns.setDefaultResultOrder("ipv4first");
 
+const app = express();
+const port = process.env.PORT || 5000;
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
+// MongoDB Connection URI
 const uri = `mongodb+srv://simpleCRUDuser:AblGEows18FdH64r@cluster0.b83kszp.mongodb.net/?appName=Cluster0`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+// Create a MongoClient
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -21,36 +26,67 @@ const client = new MongoClient(uri, {
   },
 });
 
+// ✅ DEFINE THE DATABASE AND COLLECTION GLOBALLY HERE
+const db = client.db("simpleCRUD");
+const usersCollection = db.collection("users");
+
+// MongoDB Connection Function
 const run = async () => {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
+    // Connect the client to the server
     await client.connect();
-
-    const db = client.db("simpleCRUD");
-    const usersCollection = db.collection("users");
-
-    app.get("/users", async (req, res) => {
-      const cursor = usersCollection.find();
-      const result = await cursor.toArray();
-      res.send(result);
-    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!",
+      "✅ Pinged your deployment. You successfully connected to MongoDB!",
     );
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
+  } catch (error) {
+    console.error("❌ MongoDB connection error:", error);
   }
 };
 run().catch(console.dir);
 
+// ==========================================
+//                 ROUTES
+// ==========================================
+
+// Root route
 app.get("/", (req, res) => {
   res.send("Simple CRUD server is running");
 });
 
+// GET all users
+app.get("/users", async (req, res) => {
+  try {
+    const cursor = usersCollection.find();
+    const result = await cursor.toArray();
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({ error: "Failed to fetch users" });
+  }
+});
+
+// GET a single user by ID
+app.get("/users/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const query = { _id: new ObjectId(id) };
+    const user = await usersCollection.findOne(query);
+
+    if (user) {
+      res.send(user);
+    } else {
+      res.status(404).send({ message: "User not found" });
+    }
+  } catch (error) {
+    res.status(500).send({ error: "Invalid ID format or server error" });
+  }
+});
+
+// ==========================================
+//              START SERVER
+// ==========================================
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`🚀 Example app listening on port ${port}`);
 });
